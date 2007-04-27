@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using BulletML;
 using SdlDotNet.Graphics;
 using SdlDotNet.Graphics.Primitives;
 
@@ -25,6 +27,8 @@ namespace Kamaku
         private float _maxSpeed;
         private float _minAngle;
         private float _maxAngle;
+        private StepActionPerformer _performer;
+        private float _sequenceLastAngle;
 
         public float MinSpeed
         {
@@ -90,7 +94,19 @@ namespace Kamaku
         public bool Generator
         {
             get { return _generator; }
-            set { _generator = value; }
+        }
+
+        public void ActivateGenerator(Action a)
+        {
+            _generator = true;
+            _sequenceLastAngle = 0f;
+            _performer = new StepActionPerformer(a);
+        }
+
+        public void DesactivateGenerator()
+        {
+            _generator = false;
+            _performer = null;
         }
 
         public Bullet()
@@ -109,13 +125,17 @@ namespace Kamaku
             Speed = speed;
         }
 
-        public void Update()
+        public void Update(ParameterBind bind, Point playerShip)
         {
             _position.X += Convert.ToSingle(Speed * Math.Cos(Direction));
             _position.Y += Convert.ToSingle(Speed * Math.Sin(Direction));
             if (Generator)
             {
-                Generate();
+                List<ActionContent> actions = _performer.PerformFrame(bind);
+                foreach (ActionContent ac in actions)
+                {
+                    PerformActionContent(ac, bind, playerShip);
+                }
             }
         }
 
@@ -183,11 +203,68 @@ namespace Kamaku
             }
         }
 
+        /*
         private void Generate()
         {
+            
             float speed = MinSpeed + Rand.NextFloat() * (MaxSpeed - MinSpeed);
             float direction = MinAngle + Rand.NextFloat() * (MaxAngle - MinAngle);
             Engine.AddBullet(new Bullet(Position.X, Position.Y, speed, direction));
+             
+        }
+         * */
+
+        private void PerformActionContent(ActionContent a, ParameterBind bind, Point playerShip)
+        {
+            Fire f = a as Fire;
+            Vanish v = a as Vanish;
+            if (f != null)
+            {
+                float speed = 1f; // default speed
+                if (f.Speed != null)
+                {
+                    speed = f.Speed.Value.Evaluate(bind) * 2;
+                }
+                else
+                {
+                    Console.WriteLine("default speed");
+                }
+                float angleBML = 0f; // default direction
+                if (f.Direction != null)
+                {
+                    Console.WriteLine("direction=" + f.Direction.Value);
+                    angleBML = f.Direction.Value.Evaluate(bind);
+                }
+                else
+                {
+                    Console.WriteLine("default direction");
+                }
+                angleBML = (float)(angleBML / 180 * Math.PI);
+                switch (f.Direction.Reference)
+                {
+                    case DirectionReference.Absolute:
+                    case DirectionReference.Relative: // what does "Relative" mean in this situation ?
+                        _sequenceLastAngle = angleBML;
+                        break;
+                    case DirectionReference.Aim:
+                        _sequenceLastAngle = angleBML + AngleToward(playerShip);
+                        break;
+                    case DirectionReference.Sequence:
+                        _sequenceLastAngle += angleBML;
+                        break;
+                }
+                Bullet b = new Bullet(Position.X, Position.Y, speed, _sequenceLastAngle);
+                if (f.Bullet.Action != null)
+                {
+                    // bullet is an emitter
+                    b.ActivateGenerator(f.Bullet.Action);
+                }
+                Engine.AddBullet(b);
+            }
+            else if (v != null)
+            {
+                Engine.RemoveBullet(this);
+            }
         }
 
         public float AngleToward(Point to)

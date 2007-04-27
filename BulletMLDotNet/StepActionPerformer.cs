@@ -129,6 +129,7 @@ namespace BulletML
             Repeat r = subAction as Repeat;
             Fire f = subAction as Fire;
             Wait w = subAction as Wait;
+            Vanish v = subAction as Vanish;
             if (r != null)
             {
                 _repeat = Convert.ToInt32(r.Times.Evaluate(bind));
@@ -139,6 +140,16 @@ namespace BulletML
             else if (f != null)
             {
                 //Console.WriteLine("Fire!");
+                /*
+                if (f.Bullet.Actions.Count > 0)
+                {
+                    // firing an emitter
+                    foreach (Action a in f.Bullet.Actions)
+                    {
+                        _activeSubActions.Add(new StepActionPerformer(a, false));
+                    }
+                }
+                 */
                 return new Step(StepType.ActionContent, f);
             }
             else if (w != null)
@@ -146,6 +157,10 @@ namespace BulletML
                 //Console.WriteLine("Set wait " + (w.Value - 1));
                 _wait = Convert.ToInt32(w.Value.Evaluate(bind)) - 1;
                 return new Step(StepType.Wait);
+            }
+            else if (v != null)
+            {
+                return new Step(StepType.ActionContent, v);
             }
             //Console.WriteLine("unkown subaction");
             return new Step(StepType.None);

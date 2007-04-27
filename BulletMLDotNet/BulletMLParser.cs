@@ -201,13 +201,26 @@ namespace BulletML
                         break;
                 }
             }
+            Action action = null;
+            if (actions.Count == 1)
+            {
+                action = actions[0];
+            }
+            else if (actions.Count > 1)
+            {
+                action = new Action();
+                foreach (Action a in actions)
+                {
+                    action.AddActionContent(a);
+                }
+            }
             if (label == "")
             {
-                return new Bullet(dir, speed, actions);
+                return new Bullet(dir, speed, action);
             }
             else
             {
-                return new LabeledBullet(dir, speed, actions, label);
+                return new LabeledBullet(dir, speed, action, label);
             }
         }
 

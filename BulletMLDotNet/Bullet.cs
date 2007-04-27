@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace BulletML
 {
@@ -7,19 +6,20 @@ namespace BulletML
     {
         protected Direction _direction;
         protected Speed _speed;
-        protected List<Action> _actions = new List<Action>();
+        protected Action _action;
 
         internal Bullet() // for BulletRef construction
         {
             _direction = null;
             _speed = null;
+            _action = null;
         }
 
-        internal Bullet(Direction dir, Speed speed, List<Action> actions)
+        internal Bullet(Direction dir, Speed speed, Action action)
         {
             _direction = dir;
             _speed = speed;
-            _actions = actions;
+            _action = action;
         }
 
         public Direction Direction
@@ -32,9 +32,9 @@ namespace BulletML
             get { return _speed; }
         }
 
-        public List<Action> Actions
+        public Action Action
         {
-            get { return _actions; }
+            get { return _action; }
         }
     }
 
@@ -47,8 +47,8 @@ namespace BulletML
             get { return _label; }
         }
 
-        internal LabeledBullet(Direction dir, Speed speed, List<Action> actions, string label)
-            : base(dir, speed, actions)
+        internal LabeledBullet(Direction dir, Speed speed, Action action, string label)
+            : base(dir, speed, action)
         {
             _label = label;
         }
@@ -71,7 +71,7 @@ namespace BulletML
             }
             _direction = b.Direction;
             _speed = b.Speed;
-            _actions = b.Actions;
+            _action = b.Action;
         }
 
         public string RefLabel

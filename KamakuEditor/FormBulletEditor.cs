@@ -1,13 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using BulletML;
 using SdlDotNet.Core;
 using SdlDotNet.Graphics;
 using SdlDotNet.Particles;
 using SdlDotNet.Particles.Emitters;
-using BulletML;
 
 namespace Kamaku
 {
@@ -20,10 +19,8 @@ namespace Kamaku
         private Surface _frame = new Surface(Settings.Width, Settings.Height);
         private ParticleSystem _particles = new ParticleSystem();
         private int _hitCount = 0;
-        private StepActionPerformer _performer = null;
         private ParameterBind _bind;
-        private Bullet _emitter;
-        private float _sequenceLastAngle = 0f;
+        private Bullet _topGenerator;
 
         public FormBulletEditor()
         {
@@ -32,15 +29,14 @@ namespace Kamaku
 
         private void FormBulletEditor_Load(object sender, EventArgs e)
         {
-            _emitter = new Bullet(100, 100);
-            _emitter.MinSpeed = 1;
-            _emitter.MaxSpeed = 5;
-            _emitter.MinAngle = 0;
-            _emitter.MaxAngle = Convert.ToSingle(Math.PI);
-            _emitter.Speed = 0;
-            _emitter.Generator = false;
-            _emitter.DrawAsCircle(Color.Green, 3);
-            Engine.Bullets.AddLast(_emitter);
+            _topGenerator = new Bullet(100, 100);
+            //emitter.MinSpeed = 1;
+            //emitter.MaxSpeed = 5;
+            //emitter.MinAngle = 0;
+            //emitter.MaxAngle = Convert.ToSingle(Math.PI);
+            _topGenerator.Speed = 0;
+            _topGenerator.DrawAsCircle(Color.Green, 3);
+            Engine.Bullets.AddLast(_topGenerator);
 
             SdlDotNet.Core.Events.Fps = Settings.Fps;
             SdlDotNet.Core.Events.Tick += new EventHandler<TickEventArgs>(Events_Tick);
@@ -57,6 +53,7 @@ namespace Kamaku
             _frame.Fill(Color.Black);
             ship = new Rectangle(_mouseLoction.X - 4, _mouseLoction.Y - 5, 8, 9);
             _frame.Fill(ship, Color.Red);
+/*
             if (_performer != null)
             {
                 List<ActionContent> actions = _performer.PerformFrame(_bind);
@@ -65,7 +62,7 @@ namespace Kamaku
                     //Console.WriteLine(actions.Count + " actions");
                     foreach (ActionContent ac in actions)
                     {
-                        PerformActionContent(ac);
+                        PerformActionContent(ac, _bind, _mouseLoction);
                     }
                 }
                 else
@@ -74,10 +71,10 @@ namespace Kamaku
                     //buttonValidate.Text = "Start"; thrad pb
                     Console.WriteLine("BulletML ended");
                 }
-            }
+            }*/
             foreach (Bullet b in Engine.Bullets)
             {
-                b.Update();
+                b.Update(_bind, _mouseLoction);
                 b.Draw(_frame);
                 if (_mouseOver && b.Collidable && ship.Contains(b.Position))
                 {
@@ -146,11 +143,10 @@ namespace Kamaku
 
         private void buttonValidate_Click(object sender, EventArgs e)
         {
-            if (_performer != null)
+            if (_topGenerator.Generator)
             {
                 buttonValidate.Text = "Start";
-                _performer = null;
-                _sequenceLastAngle = 0f;
+                _topGenerator.DesactivateGenerator();
             }
             else
             {
@@ -159,50 +155,8 @@ namespace Kamaku
                 parser.Parse(richTextBoxBulletML.Text);
                 Console.WriteLine("BulletML parsed: {0} actions, {1} bullets, {2} fires.", parser.Actions.Count,
                                   parser.Bullets.Count, parser.Fires.Count);
-                _performer = new StepActionPerformer(parser.Actions["top"]);
                 _bind = new ParameterBind();
-            }
-        }
-
-        private void PerformActionContent(ActionContent a)
-        {
-            Fire f = a as Fire;
-            if (f != null)
-            {
-                float speed = 1f; // default speed
-                if (f.Speed != null)
-                {
-                    speed = f.Speed.Value.Evaluate(_bind)*2;
-                }
-                else
-                {
-                    Console.WriteLine("default speed");
-                }
-                float angleBML = 0f; // default direction
-                if (f.Direction != null)
-                {
-                    Console.WriteLine("direction=" + f.Direction.Value);
-                    angleBML = f.Direction.Value.Evaluate(_bind);
-                }
-                else
-                {
-                    Console.WriteLine("default direction");
-                }
-                angleBML = (float)(angleBML / 180 * Math.PI);
-                switch (f.Direction.Reference)
-                {
-                    case DirectionReference.Absolute:
-                    case DirectionReference.Relative: // what does "Relative" mean in this situation ?
-                        _sequenceLastAngle = angleBML;
-                        break;
-                    case DirectionReference.Aim:
-                        _sequenceLastAngle = angleBML + _emitter.AngleToward(_mouseLoction);
-                        break;
-                    case DirectionReference.Sequence:
-                        _sequenceLastAngle += angleBML;
-                        break;
-                }
-                Engine.AddBullet(new Bullet(_emitter.Position.X, _emitter.Position.Y, speed, _sequenceLastAngle));
+                _topGenerator.ActivateGenerator(parser.Actions["top"]);
             }
         }
     }
