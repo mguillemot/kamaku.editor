@@ -92,7 +92,7 @@ namespace Kamaku
             this.buttonValidate.Name = "buttonValidate";
             this.buttonValidate.Size = new System.Drawing.Size(75, 23);
             this.buttonValidate.TabIndex = 4;
-            this.buttonValidate.Text = "Validate";
+            this.buttonValidate.Text = "Start";
             this.buttonValidate.UseVisualStyleBackColor = true;
             this.buttonValidate.Click += new System.EventHandler(this.buttonValidate_Click);
             // 

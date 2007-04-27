@@ -7,30 +7,32 @@ namespace BulletML
 {
     public class BulletMLParser
     {
-        private Dictionary<string, Action> _actions = new Dictionary<string, Action>();
-        private Dictionary<string, Bullet> _bullets = new Dictionary<string, Bullet>();
-        private Dictionary<string, Fire> _fires = new Dictionary<string, Fire>();
+        private Dictionary<string, LabeledAction> _labeledActions = new Dictionary<string, LabeledAction>();
+        private Dictionary<string, LabeledBullet> _labeledBullets = new Dictionary<string, LabeledBullet>();
+        private Dictionary<string, LabeledFire> _labeledFires = new Dictionary<string, LabeledFire>();
 
-        public Dictionary<string, Action> Actions
+        private List<BulletRef> _bulletRefs = new List<BulletRef>();
+
+        public Dictionary<string, LabeledAction> Actions
         {
-            get { return _actions; }
+            get { return _labeledActions; }
         }
 
-        public Dictionary<string, Bullet> Bullets
+        public Dictionary<string, LabeledBullet> Bullets
         {
-            get { return _bullets; }
+            get { return _labeledBullets; }
         }
 
-        public Dictionary<string, Fire> Fires
+        public Dictionary<string, LabeledFire> Fires
         {
-            get { return _fires; }
+            get { return _labeledFires; }
         }
 
         public void Reset()
         {
-            _actions.Clear();
-            _bullets.Clear();
-            _fires.Clear();
+            _labeledActions.Clear();
+            _labeledBullets.Clear();
+            _labeledFires.Clear();
         }
 
         public void Parse(string bulletML)
@@ -57,6 +59,12 @@ namespace BulletML
                 LabeledFire f = (LabeledFire)ParseFire(iter.Current);
                 Fires[f.Label] = f;
             }
+            // Resolve references
+            foreach (BulletRef bref in _bulletRefs)
+            {
+                bref.ResolveReference(_labeledBullets[bref.RefLabel]);
+            }
+            _bulletRefs.Clear();
         }
 
         private Action ParseAction(XPathNavigator actionNode)
@@ -85,7 +93,7 @@ namespace BulletML
                         a.AddActionContent(acc);
                         break;
                     case "vanish":
-                        ActionContent v = ParseVanish(actionContent.Current);
+                        ActionContent v = ParseVanish();
                         a.AddActionContent(v);
                         break;
                     case "changeSpeed":
@@ -171,41 +179,44 @@ namespace BulletML
         private Bullet ParseBullet(XPathNavigator bulletNode)
         {
             string label = bulletNode.GetAttribute("label", "");
-            Bullet b;
-            if (label == "")
-            {
-                b = new Bullet();
-            }
-            else
-            {
-                b = new LabeledBullet(label);
-            }
+            Direction dir = null;
+            Speed speed = null;
+            List<Action> actions = new List<Action>();
             XPathNodeIterator bulletContent = bulletNode.SelectChildren(XPathNodeType.Element);
             while (bulletContent.MoveNext())
             {
                 switch (bulletContent.Current.Name)
                 {
                     case "direction":
-                        b.Direction = ParseDirection(bulletContent.Current);
+                        dir = ParseDirection(bulletContent.Current);
                         break;
                     case "speed":
-                        b.Speed = ParseSpeed(bulletContent.Current);
+                       speed = ParseSpeed(bulletContent.Current);
                         break;
                     case "action":
-                        b.Actions.Add(ParseAction(bulletContent.Current));
+                        actions.Add(ParseAction(bulletContent.Current));
                         break;
                     case "actionRef":
-                        b.Actions.Add(ParseActionRef(bulletContent.Current));
+                        actions.Add(ParseActionRef(bulletContent.Current));
                         break;
                 }
             }
-            return b;
+            if (label == "")
+            {
+                return new Bullet(dir, speed, actions);
+            }
+            else
+            {
+                return new LabeledBullet(dir, speed, actions, label);
+            }
         }
 
-        private Bullet ParseBulletRef(XPathNavigator bulletRefNode)
+        private BulletRef ParseBulletRef(XPathNavigator bulletRefNode)
         {
             string label = bulletRefNode.GetAttribute("label", "");
-            return Bullets[label];
+            BulletRef bref = new BulletRef(label);
+            _bulletRefs.Add(bref);
+            return bref;
         }
 
         private static Direction ParseDirection(XPathNavigator directionNode)
@@ -255,7 +266,7 @@ namespace BulletML
         {
             XPathNodeIterator changeDirectionContent = changeDirectionNode.SelectChildren(XPathNodeType.Element);
             Direction dir = null;
-            int term = 0;
+            Expression term = null;
             while (changeDirectionContent.MoveNext())
             {
                 switch (changeDirectionContent.Current.Name)
@@ -264,7 +275,7 @@ namespace BulletML
                         dir = ParseDirection(changeDirectionContent.Current);
                         break;
                     case "term":
-                        term = ParseIntValue(changeDirectionContent.Current);
+                        term = ParseTerm(changeDirectionContent.Current);
                         break;
                 }
             }
@@ -275,7 +286,7 @@ namespace BulletML
         {
             XPathNodeIterator changeSpeedContent = changeSpeedNode.SelectChildren(XPathNodeType.Element);
             Speed speed = null;
-            int term = 0;
+            Expression term = null;
             while (changeSpeedContent.MoveNext())
             {
                 switch (changeSpeedContent.Current.Name)
@@ -284,23 +295,23 @@ namespace BulletML
                         speed = ParseSpeed(changeSpeedContent.Current);
                         break;
                     case "term":
-                        term = ParseIntValue(changeSpeedContent.Current);
+                        term = ParseTerm(changeSpeedContent.Current);
                         break;
                 }
             }
             return new ChangeSpeed(speed, term);
         }
 
-        private static int ParseIntValue(XPathNavigator intNode)
+        private static Expression ParseTerm(XPathNavigator termNode)
         {
-            return int.Parse(intNode.Value);
+            return Expression.Parse(termNode.Value);
         }
 
         private static Accel ParceAccel(XPathNavigator accelNode)
         {
             XPathNodeIterator accelContent = accelNode.SelectChildren(XPathNodeType.Element);
             Speed horizontal = null, vertical = null;
-            int term = 0;
+            Expression term = null;
             while (accelContent.MoveNext())
             {
                 switch (accelContent.Current.Name)
@@ -312,14 +323,14 @@ namespace BulletML
                         vertical = ParseSpeed(accelContent.Current);
                         break;
                     case "term":
-                        term = ParseIntValue(accelContent.Current);
+                        term = ParseTerm(accelContent.Current);
                         break;
                 }
             }
             return new Accel(horizontal, vertical, term);
         }
 
-        private static Vanish ParseVanish(XPathNavigator vanishNode)
+        private static Vanish ParseVanish()
         {
             return new Vanish();
         }
@@ -327,14 +338,14 @@ namespace BulletML
         private Repeat ParseRepeat(XPathNavigator repeatNode)
         {
             XPathNodeIterator repeatContent = repeatNode.SelectChildren(XPathNodeType.Element);
-            int times = 0;
+            Expression times = null;
             Action action = null;
             while (repeatContent.MoveNext())
             {
                 switch (repeatContent.Current.Name)
                 {
                     case "times":
-                        times = ParseIntValue(repeatContent.Current);
+                        times = ParseTerm(repeatContent.Current);
                         break;
                     case "action":
                         action = ParseAction(repeatContent.Current);
@@ -349,7 +360,7 @@ namespace BulletML
 
         private static Wait ParseWait(XPathNavigator waitNode)
         {
-            return new Wait(ParseIntValue(waitNode));
+            return new Wait(ParseTerm(waitNode));
         }
     }
 }

@@ -1,23 +1,35 @@
+using System;
 using System.Collections.Generic;
 
 namespace BulletML
 {
     public class Bullet
     {
-        private Direction _direction;
-        private Speed _speed;
-        private List<Action> _actions = new List<Action>();
+        protected Direction _direction;
+        protected Speed _speed;
+        protected List<Action> _actions = new List<Action>();
+
+        internal Bullet() // for BulletRef construction
+        {
+            _direction = null;
+            _speed = null;
+        }
+
+        internal Bullet(Direction dir, Speed speed, List<Action> actions)
+        {
+            _direction = dir;
+            _speed = speed;
+            _actions = actions;
+        }
 
         public Direction Direction
         {
             get { return _direction; }
-            set { _direction = value; }
         }
 
         public Speed Speed
         {
             get { return _speed; }
-            set { _speed = value; }
         }
 
         public List<Action> Actions
@@ -35,9 +47,36 @@ namespace BulletML
             get { return _label; }
         }
 
-        public LabeledBullet(string label)
+        internal LabeledBullet(Direction dir, Speed speed, List<Action> actions, string label)
+            : base(dir, speed, actions)
         {
             _label = label;
+        }
+    }
+
+    public class BulletRef : Bullet
+    {
+        private string _refLabel;
+
+        internal BulletRef(string refLabel)
+        {
+            _refLabel = refLabel;
+        }
+
+        internal void ResolveReference(LabeledBullet b)
+        {
+            if (_refLabel != b.Label)
+            {
+                throw new ArgumentException("Bad LabeledBullet reference.");
+            }
+            _direction = b.Direction;
+            _speed = b.Speed;
+            _actions = b.Actions;
+        }
+
+        public string RefLabel
+        {
+            get { return _refLabel; }
         }
     }
 }

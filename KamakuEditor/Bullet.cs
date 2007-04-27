@@ -189,5 +189,29 @@ namespace Kamaku
             float direction = MinAngle + Rand.NextFloat() * (MaxAngle - MinAngle);
             Engine.AddBullet(new Bullet(Position.X, Position.Y, speed, direction));
         }
+
+        public float AngleToward(Point to)
+        {
+            float dx = to.X - _position.X;
+            float dy = to.Y - _position.Y;
+            float angle;
+            if (dx != 0)
+            {
+                angle = (float) Math.Atan(dy/dx);
+            }
+            else if (dy > 0)
+            {
+                angle = (float) (Math.PI/2);
+            }
+            else
+            {
+                angle = (float) (-Math.PI/2);
+            }
+            if (dx < 0)
+            {
+                angle += (float) Math.PI;
+            }
+            return angle;
+        }
     }
 }

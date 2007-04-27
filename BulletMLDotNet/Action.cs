@@ -103,9 +103,9 @@ namespace BulletML
     public class ChangeDirection : ActionContent
     {
         private Direction _direction;
-        private int _term;
+        private Expression _term;
 
-        internal ChangeDirection(Direction dir, int term)
+        internal ChangeDirection(Direction dir, Expression term)
         {
             _direction = dir;
             _term = term;
@@ -116,7 +116,7 @@ namespace BulletML
             get { return _direction; }
         }
 
-        public int Term
+        public Expression Term
         {
             get { return _term; }
         }
@@ -125,15 +125,15 @@ namespace BulletML
     public class ChangeSpeed : ActionContent
     {
         private Speed _speed;
-        private int _term;
+        private Expression _term;
 
-        internal ChangeSpeed(Speed speed, int term)
+        internal ChangeSpeed(Speed speed, Expression term)
         {
             _speed = speed;
             _term = term;
         }
 
-        public int Term
+        public Expression Term
         {
             get { return _term; }
         }
@@ -148,9 +148,9 @@ namespace BulletML
     {
         private Speed _horizontal;
         private Speed _vertical;
-        private int _term;
+        private Expression _term;
 
-        internal Accel(Speed horizontal, Speed vertical, int term)
+        internal Accel(Speed horizontal, Speed vertical, Expression term)
         {
             _horizontal = horizontal;
             _vertical = vertical;
@@ -167,7 +167,7 @@ namespace BulletML
             get { return _vertical; }
         }
 
-        public int Term
+        public Expression Term
         {
             get { return _term; }
         }
@@ -182,16 +182,16 @@ namespace BulletML
 
     public class Repeat : ActionContent
     {
-        private int _times;
+        private Expression _times;
         private Action _action;
 
-        internal Repeat(int times, Action action)
+        internal Repeat(Expression times, Action action)
         {
             _times = times;
             _action = action;
         }
 
-        public int Times
+        public Expression Times
         {
             get { return _times; }
         }
@@ -204,17 +204,16 @@ namespace BulletML
 
     public class Wait : ActionContent
     {
-        private int _value;
+        private Expression _value;
 
-        internal Wait(int value)
+        internal Wait(Expression value)
         {
             _value = value;
         }
 
-        public int Value
+        public Expression Value
         {
             get { return _value; }
-            set { _value = value; }
         }
     }
 }
