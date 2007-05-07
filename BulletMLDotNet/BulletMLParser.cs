@@ -10,8 +10,9 @@ namespace BulletML
         private Dictionary<string, LabeledAction> _labeledActions = new Dictionary<string, LabeledAction>();
         private Dictionary<string, LabeledBullet> _labeledBullets = new Dictionary<string, LabeledBullet>();
         private Dictionary<string, LabeledFire> _labeledFires = new Dictionary<string, LabeledFire>();
-
+        private List<ActionRef> _actionRefs = new List<ActionRef>();
         private List<BulletRef> _bulletRefs = new List<BulletRef>();
+        private List<FireRef> _fireRefs = new List<FireRef>();
 
         public Dictionary<string, LabeledAction> Actions
         {
@@ -60,11 +61,21 @@ namespace BulletML
                 Fires[f.Label] = f;
             }
             // Resolve references
+            foreach (ActionRef aref in _actionRefs)
+            {
+                aref.ResolveReference(_labeledActions[aref.RefLabel]);
+            }
+            _actionRefs.Clear();
             foreach (BulletRef bref in _bulletRefs)
             {
                 bref.ResolveReference(_labeledBullets[bref.RefLabel]);
             }
             _bulletRefs.Clear();
+            foreach (FireRef fref in _fireRefs)
+            {
+                fref.ResolveReference(_labeledFires[fref.RefLabel]);
+            }
+            _fireRefs.Clear();
         }
 
         private Action ParseAction(XPathNavigator actionNode)
@@ -129,10 +140,26 @@ namespace BulletML
             return a;
         }
 
-        private Action ParseActionRef(XPathNavigator actionRefNode)
+        private ActionRef ParseActionRef(XPathNavigator actionRefNode)
         {
             string label = actionRefNode.GetAttribute("label", "");
-            return Actions[label];
+            ActionRef aref = new ActionRef(label, new List<Expression>());
+            XPathNodeIterator actionRefContent = actionRefNode.SelectChildren(XPathNodeType.Element);
+            while (actionRefContent.MoveNext())
+            {
+                if (actionRefContent.Current.Name == "param")
+                {
+                    Expression e = ParseParam(actionRefContent.Current);
+                    aref.Parameters.Add(e);
+                }
+            }
+            _actionRefs.Add(aref);
+            return aref;
+        }
+
+        private static Expression ParseParam(XPathNavigator paramNode)
+        {
+            return Expression.Parse(paramNode.Value);
         }
 
         private Fire ParseFire(XPathNavigator fireNode)
@@ -170,10 +197,21 @@ namespace BulletML
             }
         }
 
-        private Fire ParseFireRef(XPathNavigator fireRefNode)
+        private FireRef ParseFireRef(XPathNavigator fireRefNode)
         {
             string label = fireRefNode.GetAttribute("label", "");
-            return Fires[label];
+            FireRef fref = new FireRef(label, new List<Expression>());
+            XPathNodeIterator fireRefContent = fireRefNode.SelectChildren(XPathNodeType.Element);
+            while (fireRefContent.MoveNext())
+            {
+                if (fireRefContent.Current.Name == "param")
+                {
+                    Expression e = ParseParam(fireRefContent.Current);
+                    fref.Parameters.Add(e);
+                }
+            }
+            _fireRefs.Add(fref);
+            return fref;
         }
 
         private Bullet ParseBullet(XPathNavigator bulletNode)
@@ -227,7 +265,16 @@ namespace BulletML
         private BulletRef ParseBulletRef(XPathNavigator bulletRefNode)
         {
             string label = bulletRefNode.GetAttribute("label", "");
-            BulletRef bref = new BulletRef(label);
+            BulletRef bref = new BulletRef(label, new List<Expression>());
+            XPathNodeIterator bulletRefContent = bulletRefNode.SelectChildren(XPathNodeType.Element);
+            while (bulletRefContent.MoveNext())
+            {
+                if (bulletRefContent.Current.Name == "param")
+                {
+                    Expression e = ParseParam(bulletRefContent.Current);
+                    bref.Parameters.Add(e);
+                }
+            }
             _bulletRefs.Add(bref);
             return bref;
         }

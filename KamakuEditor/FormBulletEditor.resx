@@ -162,18 +162,25 @@
           xmlns="http://www.asahi-net.or.jp/~cs8k-cyu/bulletml"&gt;
 
 &lt;action label="top"&gt;
- &lt;fire&gt;
-  &lt;direction&gt;-45+$rand*90&lt;/direction&gt;
-  &lt;speed&gt;0.4+$rand*0.8&lt;/speed&gt;
-  &lt;bullet&gt;
+ &lt;fireRef label="toto"&gt;
+&lt;param&gt;5&lt;/param&gt;
+ &lt;/fireRef&gt;
+&lt;/action&gt;
+
+&lt;fire label="toto"&gt;
+  &lt;speed&gt;$1&lt;/speed&gt;
+  &lt;bulletRef label="tutu"&gt;
+&lt;param&gt;20&lt;/param&gt;
+&lt;/bulletRef&gt;
+&lt;/fire&gt;
+
+&lt;bullet label="tutu"&gt;
 &lt;action&gt;
-&lt;wait&gt;40&lt;/wait&gt;
+&lt;wait&gt;$1&lt;/wait&gt;
 &lt;vanish/&gt;
 &lt;/action&gt;
-  &lt;/bullet&gt;
- &lt;/fire&gt;
- &lt;wait&gt;2&lt;/wait&gt;
-&lt;/action&gt;
+&lt;/bullet&gt;
+
 
 &lt;/bulletml&gt;</value>
   </data>

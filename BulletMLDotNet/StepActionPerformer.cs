@@ -20,10 +20,6 @@ namespace BulletML
 
             public Step(StepType type)
             {
-                if (type == StepType.ActionContent)
-                {
-                    throw new ArgumentException("ActionContent steps must have a bound ActionContent");
-                }
                 _type = type;
                 _actionContent = null;
             }
@@ -56,13 +52,13 @@ namespace BulletML
             _loop = loop;
         }
 
-        public List<ActionContent> PerformFrame(ParameterBind bind)
+        public List<ActionContent> PerformFrame(float rank)
         {
             List<ActionContent> actionsOfFrame = new List<ActionContent>();
             bool endOfFrame = false;
             do
             {
-                Step step = PerformStep(bind);
+                Step step = PerformStep(rank);
                 switch (step.Type)
                 {
                     case StepType.None:
@@ -71,7 +67,7 @@ namespace BulletML
                         actionsOfFrame.Add(step.ActionContent);
                         break;
                     case StepType.Ended:
-                        return actionsOfFrame; //null?
+                        return actionsOfFrame;
                     case StepType.Wait:
                         endOfFrame = true;
                         break;
@@ -82,30 +78,24 @@ namespace BulletML
             return actionsOfFrame;
         }
 
-        private Step PerformStep(ParameterBind bind)
+        private Step PerformStep(float rank)
         {
             // Currently waiting
             if (_wait != 0)
             {
                 _wait--;
-                //Console.WriteLine("Wait (reamining " + _wait + ")");
                 return new Step(StepType.Wait);
             }
             // Currently repeating an action
             if (_activeRepeat != null)
             {
-                Step step = _activeRepeat.PerformStep(bind);
+                Step step = _activeRepeat.PerformStep(rank);
                 if (step.Type == StepType.Ended)
                 {
                     _repeat--;
                     if (_repeat == 0)
                     {
                         _activeRepeat = null;
-                        //Console.WriteLine("Repeat ended.");
-                    }
-                    else
-                    {
-                        //Console.WriteLine("Reapeating " + _repeat + " times more");
                     }
                     return new Step(StepType.None);
                 }
@@ -121,7 +111,6 @@ namespace BulletML
                 {
                     _firstInactive = 0;
                 }
-                //Console.WriteLine("End of subaction list");
                 return new Step(StepType.Ended);
             }
             ActionContent subAction = _action.Content[_firstInactive];
@@ -129,41 +118,30 @@ namespace BulletML
             Repeat r = subAction as Repeat;
             Fire f = subAction as Fire;
             Wait w = subAction as Wait;
-            Vanish v = subAction as Vanish;
-            if (r != null)
+            Action a = subAction as Action;
+            if (f != null)
             {
-                _repeat = Convert.ToInt32(r.Times.Evaluate(bind));
-                _activeRepeat = new StepActionPerformer(r.Action, true);
-                //Console.WriteLine("Activate repeat (" + _repeat + " times)");
-                return new Step(StepType.None);
-            }
-            else if (f != null)
-            {
-                //Console.WriteLine("Fire!");
-                /*
-                if (f.Bullet.Actions.Count > 0)
-                {
-                    // firing an emitter
-                    foreach (Action a in f.Bullet.Actions)
-                    {
-                        _activeSubActions.Add(new StepActionPerformer(a, false));
-                    }
-                }
-                 */
                 return new Step(StepType.ActionContent, f);
             }
             else if (w != null)
             {
-                //Console.WriteLine("Set wait " + (w.Value - 1));
-                _wait = Convert.ToInt32(w.Value.Evaluate(bind)) - 1;
+                _wait = Convert.ToInt32(w.Value.Evaluate(rank, w.Parameters)) - 1;
                 return new Step(StepType.Wait);
             }
-            else if (v != null)
+            else if (r != null)
             {
-                return new Step(StepType.ActionContent, v);
+                _repeat = Convert.ToInt32(r.Times.Evaluate(rank, r.Parameters));
+                _activeRepeat = new StepActionPerformer(r.Action, true);
+                return new Step(StepType.None);
             }
-            //Console.WriteLine("unkown subaction");
-            return new Step(StepType.None);
+            else if (a != null)
+            {
+                _repeat = 1;
+                _activeRepeat = new StepActionPerformer(a);
+                // TODO: bind paramters?
+                return new Step(StepType.None);
+            }
+            return new Step(StepType.ActionContent, subAction);
         }
     }
 }

@@ -1,15 +1,23 @@
+using System;
 using System.Collections.Generic;
 
 namespace BulletML
 {
     public abstract class ActionContent
     {
-        private Action _parent = null;
+        protected Action _parent = null;
+        protected List<Expression> _parameters = null;
 
         public Action Parent
         {
             get { return _parent; }
         }
+
+        public List<Expression> Parameters
+        {
+            get { return _parameters; }
+        }
+
 
         internal ActionContent()
         {
@@ -23,7 +31,7 @@ namespace BulletML
 
     public class Action : ActionContent
     {
-        private List<ActionContent> _actions = new List<ActionContent>();
+        protected List<ActionContent> _actions = new List<ActionContent>();
 
         internal Action()
         {
@@ -56,11 +64,44 @@ namespace BulletML
         }
     }
 
+    public class ActionRef : Action
+    {
+        private string _refLabel;
+
+        internal ActionRef(string refLabel, List<Expression> parameters)
+        {
+            _refLabel = refLabel;
+            _parameters = parameters;
+        }
+
+        internal void ResolveReference(LabeledAction a)
+        {
+            if (_refLabel != a.Label)
+            {
+                throw new ArgumentException("Bad LabeledAction reference.");
+            }
+            _parent = a.Parent;
+            _actions = a.Content;
+        }
+
+        public string RefLabel
+        {
+            get { return _refLabel; }
+        }
+    }
+
     public class Fire : ActionContent
     {
-        private Direction _direction;
-        private Speed _speed;
-        private Bullet _bullet;
+        protected Direction _direction;
+        protected Speed _speed;
+        protected Bullet _bullet;
+
+        internal Fire() // for FireRef construction
+        {
+            _direction = null;
+            _speed = null;
+            _bullet = null;
+        }
 
         internal Fire(Direction dir, Speed speed, Bullet bul)
         {
@@ -97,6 +138,34 @@ namespace BulletML
         public string Label
         {
             get { return _label; }
+        }
+    }
+
+    public class FireRef : Fire
+    {
+        private string _refLabel;
+
+        internal FireRef(string refLabel, List<Expression> parameters)
+        {
+            _refLabel = refLabel;
+            _parameters = parameters;
+        }
+
+        internal void ResolveReference(LabeledFire f)
+        {
+            if (_refLabel != f.Label)
+            {
+                throw new ArgumentException("Bad LabeledFire reference.");
+            }
+            _parent = f.Parent;
+            _direction = f.Direction;
+            _speed = f.Speed;
+            _bullet = f.Bullet;
+        }
+
+        public string RefLabel
+        {
+            get { return _refLabel; }
         }
     }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -10,6 +11,8 @@ namespace BulletML
 
     internal class Value
     {
+        private static Random _rand = new Random();
+
         private ValueType _type;
         private float _immediateValue;
         private int _paramNumber;
@@ -112,7 +115,7 @@ namespace BulletML
             get { return _paramNumber; }
         }
 
-        public float Evaluate(ParameterBind bind)
+        public float Evaluate(float rank, List<Expression> parameters)
         {
             switch (_type)
             {
@@ -122,24 +125,23 @@ namespace BulletML
                     switch (_op)
                     {
                         case Operation.Add:
-                            return _left.Evaluate(bind) + _right.Evaluate(bind);
+                            return _left.Evaluate(rank, parameters) + _right.Evaluate(rank, parameters);
                         case Operation.Sub:
-                            return _left.Evaluate(bind) - _right.Evaluate(bind);
+                            return _left.Evaluate(rank, parameters) - _right.Evaluate(rank, parameters);
                         case Operation.Mul:
-                            return _left.Evaluate(bind) * _right.Evaluate(bind);
+                            return _left.Evaluate(rank, parameters) * _right.Evaluate(rank, parameters);
                         case Operation.Div:
-                            return _left.Evaluate(bind) / _right.Evaluate(bind);
+                            return _left.Evaluate(rank, parameters) / _right.Evaluate(rank, parameters);
                         case Operation.Mod:
-                            return _left.Evaluate(bind) % _right.Evaluate(bind);
+                            return _left.Evaluate(rank, parameters) % _right.Evaluate(rank, parameters);
                     }
                     return 0;
                 case ValueType.Rand:
-                    Random r = new Random();
-                    return Convert.ToSingle(r.NextDouble());
+                    return Convert.ToSingle(_rand.NextDouble());
                 case ValueType.Rank:
-                    return bind.Rank;
+                    return rank;
                 case ValueType.Param:
-                    return bind[_paramNumber];
+                    return parameters[_paramNumber - 1].Evaluate(rank, parameters);
             }
             return 0;
         }
@@ -154,9 +156,11 @@ namespace BulletML
             _val = val;
         }
 
-        public float Evaluate(ParameterBind bind)
+        public float Evaluate(float rank, List<Expression> parameters)
         {
-            return _val.Evaluate(bind);
+            float val = _val.Evaluate(rank, parameters);
+            Console.WriteLine("Evaluate " + this + " = " + val);
+            return val;
         }
 
         public static Expression Parse(string exp)

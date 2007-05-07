@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace BulletML
 {
@@ -7,12 +8,14 @@ namespace BulletML
         protected Direction _direction;
         protected Speed _speed;
         protected Action _action;
+        protected List<Expression> _parameters;
 
         internal Bullet() // for BulletRef construction
         {
             _direction = null;
             _speed = null;
             _action = null;
+            _parameters = null;
         }
 
         internal Bullet(Direction dir, Speed speed, Action action)
@@ -20,6 +23,7 @@ namespace BulletML
             _direction = dir;
             _speed = speed;
             _action = action;
+            _parameters = null;
         }
 
         public Direction Direction
@@ -35,6 +39,11 @@ namespace BulletML
         public Action Action
         {
             get { return _action; }
+        }
+
+        public List<Expression> Parameters
+        {
+            get { return _parameters; }
         }
     }
 
@@ -58,9 +67,10 @@ namespace BulletML
     {
         private string _refLabel;
 
-        internal BulletRef(string refLabel)
+        internal BulletRef(string refLabel, List<Expression> parameters)
         {
             _refLabel = refLabel;
+            _parameters = parameters;
         }
 
         internal void ResolveReference(LabeledBullet b)

@@ -20,6 +20,13 @@ namespace Kamaku
         private short _radius;
         private int _trailSize;
         private DrawingType _drawingType = DrawingType.Point;
+        private float _rank = 0f;
+
+        // changes in progress
+        private float _changeSpeedStep;
+        private int _changeSpeedTerm = 0;
+        private float _changeDirectionStep;
+        private int _changeDirectionTerm = 0;
 
         // for generators only
         private bool _generator = false;
@@ -82,7 +89,10 @@ namespace Kamaku
         public float Direction
         {
             get { return _direction; }
-            set { _direction = value; }
+            set
+            {
+                _direction = Convert.ToSingle(value % (2 * Math.PI));
+            }
         }
 
         public Color Color
@@ -125,16 +135,26 @@ namespace Kamaku
             Speed = speed;
         }
 
-        public void Update(ParameterBind bind, Point playerShip)
+        public void Update(Point playerShip)
         {
+            if (_changeSpeedTerm > 0)
+            {
+                _speed += _changeSpeedStep;
+                _changeSpeedTerm--;
+            }
+            if (_changeDirectionTerm > 0)
+            {
+                Direction += _changeDirectionStep;
+                _changeDirectionTerm--;
+            }
             _position.X += Convert.ToSingle(Speed * Math.Cos(Direction));
             _position.Y += Convert.ToSingle(Speed * Math.Sin(Direction));
             if (Generator)
             {
-                List<ActionContent> actions = _performer.PerformFrame(bind);
+                List<ActionContent> actions = _performer.PerformFrame(_rank);
                 foreach (ActionContent ac in actions)
                 {
-                    PerformActionContent(ac, bind, playerShip);
+                    PerformActionContent(ac, playerShip);
                 }
             }
         }
@@ -194,8 +214,8 @@ namespace Kamaku
                     break;
                 case DrawingType.Line:
                     Point trail = Position;
-                    trail.X -= Convert.ToInt32(_trailSize * Math.Cos(_direction));
-                    trail.Y -= Convert.ToInt32(_trailSize * Math.Sin(_direction));
+                    trail.X -= Convert.ToInt32(_trailSize * Math.Cos(Direction));
+                    trail.Y -= Convert.ToInt32(_trailSize * Math.Sin(Direction));
                     break;
                 default:
                     s.Draw(Position, _color);
@@ -203,56 +223,61 @@ namespace Kamaku
             }
         }
 
-        /*
-        private void Generate()
-        {
-            
-            float speed = MinSpeed + Rand.NextFloat() * (MaxSpeed - MinSpeed);
-            float direction = MinAngle + Rand.NextFloat() * (MaxAngle - MinAngle);
-            Engine.AddBullet(new Bullet(Position.X, Position.Y, speed, direction));
-             
-        }
-         * */
-
-        private void PerformActionContent(ActionContent a, ParameterBind bind, Point playerShip)
+        private void PerformActionContent(ActionContent a, Point playerShip)
         {
             Fire f = a as Fire;
             Vanish v = a as Vanish;
+            ChangeSpeed cs = a as ChangeSpeed;
+            ChangeDirection cd = a as ChangeDirection;
             if (f != null)
             {
                 float speed = 1f; // default speed
-                if (f.Speed != null)
+                Speed sp = (f.Speed != null) ? f.Speed : f.Bullet.Speed;
+                if (sp != null)
                 {
-                    speed = f.Speed.Value.Evaluate(bind) * 2;
+                    switch (sp.Reference)
+                    {
+                        case SpeedReference.Absolute:
+                            speed = sp.Value.Evaluate(_rank, a.Parameters);
+                            break;
+                        case SpeedReference.Relative:
+                            speed = _speed + sp.Value.Evaluate(_rank, a.Parameters);
+                            break;
+                        case SpeedReference.Sequence:
+                            speed = Engine.LastFireSpeed + sp.Value.Evaluate(_rank, a.Parameters);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
+                Direction dir = (f.Direction != null) ? f.Direction : f.Bullet.Direction;
+                if (dir != null)
+                {
+                    float angleBML = dir.Value.Evaluate(_rank, a.Parameters);
+                    angleBML = (float)(angleBML / 180 * Math.PI);
+                    switch (dir.Reference)
+                    {
+                        case DirectionReference.Absolute:
+                            _sequenceLastAngle = angleBML;
+                            break;
+                        case DirectionReference.Relative:
+                            _sequenceLastAngle = Direction + angleBML;
+                            break;
+                        case DirectionReference.Aim:
+                            _sequenceLastAngle = angleBML + AngleToward(playerShip);
+                            break;
+                        case DirectionReference.Sequence:
+                            _sequenceLastAngle += angleBML;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("default speed");
+                    _sequenceLastAngle = AngleToward(playerShip);
                 }
-                float angleBML = 0f; // default direction
-                if (f.Direction != null)
-                {
-                    Console.WriteLine("direction=" + f.Direction.Value);
-                    angleBML = f.Direction.Value.Evaluate(bind);
-                }
-                else
-                {
-                    Console.WriteLine("default direction");
-                }
-                angleBML = (float)(angleBML / 180 * Math.PI);
-                switch (f.Direction.Reference)
-                {
-                    case DirectionReference.Absolute:
-                    case DirectionReference.Relative: // what does "Relative" mean in this situation ?
-                        _sequenceLastAngle = angleBML;
-                        break;
-                    case DirectionReference.Aim:
-                        _sequenceLastAngle = angleBML + AngleToward(playerShip);
-                        break;
-                    case DirectionReference.Sequence:
-                        _sequenceLastAngle += angleBML;
-                        break;
-                }
+                Engine.LastFireSpeed = speed;
                 Bullet b = new Bullet(Position.X, Position.Y, speed, _sequenceLastAngle);
                 if (f.Bullet.Action != null)
                 {
@@ -264,6 +289,48 @@ namespace Kamaku
             else if (v != null)
             {
                 Engine.RemoveBullet(this);
+            }
+            else if (cs != null)
+            {
+                _changeSpeedTerm = Convert.ToInt32(cs.Term.Evaluate(_rank, a.Parameters));
+                float speedBML = cs.Speed.Value.Evaluate(_rank, a.Parameters);
+                switch (cs.Speed.Reference)
+                {
+                    case SpeedReference.Absolute:
+                        _changeSpeedStep = (speedBML - _speed) / _changeSpeedTerm;
+                        break;
+                    case SpeedReference.Relative:
+                        _changeSpeedStep = speedBML / _changeSpeedTerm;
+                        break;
+                    case SpeedReference.Sequence:
+                        // TODO
+                        throw new NotImplementedException();
+                        break;
+                }
+            }
+            else if (cd != null)
+            {
+                _changeDirectionTerm = Convert.ToInt32(cd.Term.Evaluate(_rank, a.Parameters));
+                float directionBML = cd.Direction.Value.Evaluate(_rank, a.Parameters);
+                directionBML = Convert.ToSingle(directionBML / 180 * Math.PI);
+                switch (cd.Direction.Reference)
+                {
+                    case DirectionReference.Aim:
+                        _changeDirectionStep = (AngleToward(playerShip) + directionBML - Direction) / _changeDirectionTerm;
+                        break;
+                    case DirectionReference.Absolute:
+                        _changeDirectionStep = (directionBML - Direction) / _changeDirectionTerm;
+                        break;
+                    case DirectionReference.Relative:
+                        _changeDirectionStep = directionBML / _changeDirectionTerm;
+                        break;
+                    case DirectionReference.Sequence:
+                        // TODO
+                        throw new NotImplementedException();
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
         }
 

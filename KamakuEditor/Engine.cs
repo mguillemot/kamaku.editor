@@ -8,6 +8,8 @@ namespace Kamaku
         private static List<Bullet> _addedBullets = new List<Bullet>();
         private static List<Bullet> _removedBullets = new List<Bullet>();
 
+        private static float _lastFireSpeed = 0f;
+
         private Engine()
         {
         }
@@ -15,6 +17,12 @@ namespace Kamaku
         public static LinkedList<Bullet> Bullets
         {
             get { return _currentFrameBullets; }
+        }
+
+        public static float LastFireSpeed
+        {
+            get { return _lastFireSpeed; }
+            set { _lastFireSpeed = value; }
         }
 
         public static void AddBullet(Bullet b)

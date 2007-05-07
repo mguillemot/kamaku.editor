@@ -19,7 +19,6 @@ namespace Kamaku
         private Surface _frame = new Surface(Settings.Width, Settings.Height);
         private ParticleSystem _particles = new ParticleSystem();
         private int _hitCount = 0;
-        private ParameterBind _bind;
         private Bullet _topGenerator;
 
         public FormBulletEditor()
@@ -53,28 +52,9 @@ namespace Kamaku
             _frame.Fill(Color.Black);
             ship = new Rectangle(_mouseLoction.X - 4, _mouseLoction.Y - 5, 8, 9);
             _frame.Fill(ship, Color.Red);
-/*
-            if (_performer != null)
-            {
-                List<ActionContent> actions = _performer.PerformFrame(_bind);
-                if (actions != null)
-                {
-                    //Console.WriteLine(actions.Count + " actions");
-                    foreach (ActionContent ac in actions)
-                    {
-                        PerformActionContent(ac, _bind, _mouseLoction);
-                    }
-                }
-                else
-                {
-                    _performer = null;
-                    //buttonValidate.Text = "Start"; thrad pb
-                    Console.WriteLine("BulletML ended");
-                }
-            }*/
             foreach (Bullet b in Engine.Bullets)
             {
-                b.Update(_bind, _mouseLoction);
+                b.Update(_mouseLoction);
                 b.Draw(_frame);
                 if (_mouseOver && b.Collidable && ship.Contains(b.Position))
                 {
@@ -155,7 +135,6 @@ namespace Kamaku
                 parser.Parse(richTextBoxBulletML.Text);
                 Console.WriteLine("BulletML parsed: {0} actions, {1} bullets, {2} fires.", parser.Actions.Count,
                                   parser.Bullets.Count, parser.Fires.Count);
-                _bind = new ParameterBind();
                 _topGenerator.ActivateGenerator(parser.Actions["top"]);
             }
         }
