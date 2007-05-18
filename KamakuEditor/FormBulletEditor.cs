@@ -46,7 +46,7 @@ namespace Kamaku
             thread.Start();
         }
 
-        void Events_Tick(object sender, TickEventArgs e)
+        private void Events_Tick(object sender, TickEventArgs e)
         {
             Rectangle ship;
             _frame.Fill(Color.Black);
