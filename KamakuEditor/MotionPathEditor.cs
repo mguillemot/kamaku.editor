@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Threading;
 using System.Windows.Forms;
 using SdlDotNet.Core;
@@ -21,7 +22,8 @@ namespace Kamaku
         private List<Point> _path = new List<Point>();
         private List<double[]> _segmentDistance = new List<double[]>();
         private int _currentSegment = 0;
-        private Point _currentPosition = new Point();
+        private PointF _displacement = new PointF();
+        private PointF _currentPosition = new PointF();
         private PointF _currentSpeed = new PointF();
         private double _currentDistanceFromSegmentStart = 0;
         private Point _cursor;
@@ -31,6 +33,7 @@ namespace Kamaku
         private List<double> _targetSpeed = new List<double>();
         private int _hoverSpeed = -1;
         private Point _speedHover;
+        private int _step;
 
         public MotionPathEditor()
         {
@@ -57,6 +60,7 @@ namespace Kamaku
             _frame.Fill(Color.Black);
             Box screen = new Box(50, 50, 240+50, 320+50);
             _frame.Draw(screen, Color.DarkRed);
+            bool advanced = false;
             lock (_mutex)
             {
                 foreach (Point p in _nodes)
@@ -85,7 +89,7 @@ namespace Kamaku
                     p.Offset(50, 50);
                     _frame.Draw(p, Color.Green);
                 }
-                Point cp = _currentPosition;
+                Point cp = new Point((int)_currentPosition.X, (int)_currentPosition.Y);
                 cp.Offset(50, 50);
                 Line ll1 =
                     new Line(Convert.ToInt16(cp.X - 2), Convert.ToInt16(cp.Y), Convert.ToInt16(cp.X + 2),
@@ -95,7 +99,7 @@ namespace Kamaku
                              Convert.ToInt16(cp.Y + 2));
                 _frame.Draw(ll1, Color.Blue);
                 _frame.Draw(ll2, Color.Blue);
-                Point cps = _currentPosition;
+                Point cps = new Point((int)_currentPosition.X, (int)_currentPosition.Y);
                 cps.Offset(50, 50);
                 cps.Offset((int)(_currentSpeed.X * 0.5), (int)(_currentSpeed.Y * 0.5));
                 Line speedVec = new Line(cp, cps);
@@ -107,7 +111,7 @@ namespace Kamaku
                     double dist = _currentDistanceFromSegmentStart;
                     double totalDist = _segmentDistance[_currentSegment][N - 1];
                     double frameSpeed = speed0 + dist/totalDist*(speed1 - speed0);
-                    Advance(frameSpeed);
+                    advanced = Advance(frameSpeed);
                 }
             }
             surfaceControl1.Blit(_frame);
@@ -165,9 +169,9 @@ namespace Kamaku
             surfaceControlSpeedGraph.Blit(_graph);
 
             // Redraw interface
-            if (InvokeRequired)
+            if (advanced && InvokeRequired)
             {
-                //Invoke(new RefreshDelegate(RefreshValues));
+                Invoke(new RefreshDelegate(AddTrajectoryStep));
             }
         }
 
@@ -175,6 +179,12 @@ namespace Kamaku
         {
             double elev = (1 - s / MaxSpeed) * _graph.Height;
             return (short)elev;
+        }
+
+        private void AddTrajectoryStep()
+        {
+            richTextBoxCode.AppendText(string.Format(new CultureInfo("en-US"), "traj.setStep({0}, Foliage::Speed(Foliage::Fixed({1}f), Foliage::Fixed({2}f)));\n", _step, _displacement.X, _displacement.Y));
+            _step++;
         }
 
         private void RefreshValues()
@@ -230,6 +240,8 @@ namespace Kamaku
             {
                 if (_currentSegment >= _segmentDistance.Count)
                 {
+                    _currentSpeed.X = 0;
+                    _currentSpeed.Y = 0;
                     return false;
                 }
                 double[] currentSegmentDistances = _segmentDistance[_currentSegment];
@@ -242,6 +254,8 @@ namespace Kamaku
                     _currentSegment++;
                     if (_currentSegment == _segmentDistance.Count)
                     {
+                        _currentSpeed.X = 0;
+                        _currentSpeed.Y = 0;
                         return false; // Out of the path
                     }
                     currentSegmentDistances = _segmentDistance[_currentSegment];
@@ -266,8 +280,10 @@ namespace Kamaku
                 Point p1 = _nodes[_currentSegment + 1];
                 Point p2 = _nodes[_currentSegment + 2];
                 Point p3 = _nodes[_currentSegment + 3];
-                PointF curPos = Spline(p0, p1, p2, p3, t);
-                _currentPosition = new Point((int) curPos.X, (int) curPos.Y);
+                PointF previousPosition = _currentPosition;
+                _currentPosition = Spline(p0, p1, p2, p3, t);
+                _displacement.X = _currentPosition.X - previousPosition.X;
+                _displacement.Y = _currentPosition.Y - previousPosition.Y;
                 _currentSpeed = SplineSpeed(p0, p1, p2, p3, t);
                 _currentDistanceFromSegmentStart = searched;
                 return true;
@@ -334,6 +350,8 @@ namespace Kamaku
                 _targetSpeed.Clear();
                 _currentSegment = 0;
                 _currentDistanceFromSegmentStart = 0;
+                _step = 0;
+                richTextBoxCode.Clear();
             }
         }
 

@@ -29,36 +29,19 @@ namespace Kamaku
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MotionPathEditor));
-            this.surfaceControl1 = new SdlDotNet.Windows.SurfaceControl();
             this.button1 = new System.Windows.Forms.Button();
             this.buttonClear = new System.Windows.Forms.Button();
             this.listBoxNodes = new System.Windows.Forms.ListBox();
             this.surfaceControlSpeedGraph = new SdlDotNet.Windows.SurfaceControl();
-            ((System.ComponentModel.ISupportInitialize)(this.surfaceControl1)).BeginInit();
+            this.surfaceControl1 = new SdlDotNet.Windows.SurfaceControl();
+            this.richTextBoxCode = new System.Windows.Forms.RichTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.surfaceControlSpeedGraph)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.surfaceControl1)).BeginInit();
             this.SuspendLayout();
-            // 
-            // surfaceControl1
-            // 
-            this.surfaceControl1.AccessibleDescription = "SdlDotNet SurfaceControl";
-            this.surfaceControl1.AccessibleName = "SurfaceControl";
-            this.surfaceControl1.AccessibleRole = System.Windows.Forms.AccessibleRole.Graphic;
-            this.surfaceControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.surfaceControl1.Image = ((System.Drawing.Image)(resources.GetObject("surfaceControl1.Image")));
-            this.surfaceControl1.InitialImage = ((System.Drawing.Image)(resources.GetObject("surfaceControl1.InitialImage")));
-            this.surfaceControl1.Location = new System.Drawing.Point(12, 12);
-            this.surfaceControl1.Name = "surfaceControl1";
-            this.surfaceControl1.Size = new System.Drawing.Size(340, 420);
-            this.surfaceControl1.TabIndex = 0;
-            this.surfaceControl1.TabStop = false;
-            this.surfaceControl1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.surfaceControl1_MouseMove);
-            this.surfaceControl1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.surfaceControl1_MouseUp);
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(419, 24);
+            this.button1.Location = new System.Drawing.Point(370, 12);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(97, 32);
             this.button1.TabIndex = 1;
@@ -68,7 +51,7 @@ namespace Kamaku
             // 
             // buttonClear
             // 
-            this.buttonClear.Location = new System.Drawing.Point(419, 78);
+            this.buttonClear.Location = new System.Drawing.Point(473, 12);
             this.buttonClear.Name = "buttonClear";
             this.buttonClear.Size = new System.Drawing.Size(97, 32);
             this.buttonClear.TabIndex = 2;
@@ -79,9 +62,9 @@ namespace Kamaku
             // listBoxNodes
             // 
             this.listBoxNodes.FormattingEnabled = true;
-            this.listBoxNodes.Location = new System.Drawing.Point(381, 218);
+            this.listBoxNodes.Location = new System.Drawing.Point(370, 50);
             this.listBoxNodes.Name = "listBoxNodes";
-            this.listBoxNodes.Size = new System.Drawing.Size(191, 212);
+            this.listBoxNodes.Size = new System.Drawing.Size(200, 108);
             this.listBoxNodes.TabIndex = 3;
             // 
             // surfaceControlSpeedGraph
@@ -102,11 +85,38 @@ namespace Kamaku
             this.surfaceControlSpeedGraph.MouseMove += new System.Windows.Forms.MouseEventHandler(this.surfaceControlSpeedGraph_MouseMove);
             this.surfaceControlSpeedGraph.MouseUp += new System.Windows.Forms.MouseEventHandler(this.surfaceControlSpeedGraph_MouseUp);
             // 
+            // surfaceControl1
+            // 
+            this.surfaceControl1.AccessibleDescription = "SdlDotNet SurfaceControl";
+            this.surfaceControl1.AccessibleName = "SurfaceControl";
+            this.surfaceControl1.AccessibleRole = System.Windows.Forms.AccessibleRole.Graphic;
+            this.surfaceControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.surfaceControl1.Image = ((System.Drawing.Image)(resources.GetObject("surfaceControl1.Image")));
+            this.surfaceControl1.InitialImage = ((System.Drawing.Image)(resources.GetObject("surfaceControl1.InitialImage")));
+            this.surfaceControl1.Location = new System.Drawing.Point(12, 12);
+            this.surfaceControl1.Name = "surfaceControl1";
+            this.surfaceControl1.Size = new System.Drawing.Size(340, 420);
+            this.surfaceControl1.TabIndex = 0;
+            this.surfaceControl1.TabStop = false;
+            this.surfaceControl1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.surfaceControl1_MouseMove);
+            this.surfaceControl1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.surfaceControl1_MouseUp);
+            // 
+            // richTextBoxCode
+            // 
+            this.richTextBoxCode.Location = new System.Drawing.Point(372, 172);
+            this.richTextBoxCode.Name = "richTextBoxCode";
+            this.richTextBoxCode.Size = new System.Drawing.Size(197, 259);
+            this.richTextBoxCode.TabIndex = 5;
+            this.richTextBoxCode.Text = "";
+            // 
             // MotionPathEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(595, 631);
+            this.Controls.Add(this.richTextBoxCode);
             this.Controls.Add(this.surfaceControlSpeedGraph);
             this.Controls.Add(this.listBoxNodes);
             this.Controls.Add(this.buttonClear);
@@ -117,8 +127,8 @@ namespace Kamaku
             this.Name = "MotionPathEditor";
             this.Text = "Kamaku MotionPath Editor";
             this.Load += new System.EventHandler(this.MotionPathEditor_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.surfaceControl1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.surfaceControlSpeedGraph)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.surfaceControl1)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -130,5 +140,6 @@ namespace Kamaku
         private System.Windows.Forms.Button buttonClear;
         private System.Windows.Forms.ListBox listBoxNodes;
         private SdlDotNet.Windows.SurfaceControl surfaceControlSpeedGraph;
+        private System.Windows.Forms.RichTextBox richTextBoxCode;
     }
 }
